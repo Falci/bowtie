@@ -40,6 +40,9 @@ public interface FakeClient {
     @HystrixGroup(groupKey = GROUP_KEY, commandKey = COMMAND_KEY)
     @CacheKeyGroup("userCache")
     public FakeUser getCachedUser(@Path("username") String name);
+    
+    @Http(method = HttpMethod.GET, uri = "/user/{username}", headers = { @Http.Header(name = "X-SESSION-ID", value = "55892d6d-77df-4617-b728-6f5de97f5752") })
+    public FakeUser getUserWithoutHystrixGroup(@Path("username") String name);
 
     @Http(method = HttpMethod.GET, uri = "/user/{username}", headers = { @Http.Header(name = "X-SESSION-ID", value = "55892d6d-77df-4617-b728-6f5de97f5752") })
     @HystrixGroup(groupKey = GROUP_KEY, commandKey = COMMAND_KEY)

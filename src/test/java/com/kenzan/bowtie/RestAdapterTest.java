@@ -87,6 +87,13 @@ public class RestAdapterTest {
     }
 
     @Test
+    public void testGetUserWithoutHystrixGroup() {
+        LOGGER.info("Starting testGetUserWithoutHystrixGroup");
+        FakeUser user = fakeClient.getUserWithoutHystrixGroup("jdoe");
+        Assert.assertThat(user.getName(), IsEqual.equalTo("John Doe"));
+    }
+
+    @Test
     public void testGetUserObservable() {
         LOGGER.info("Starting testGetUserObservable");
         FakeUser user = fakeClient.getUserObservable("jdoe").toBlocking()
