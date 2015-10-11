@@ -24,11 +24,11 @@ import com.kenzan.bowtie.annotation.HystrixGroup;
 import com.kenzan.bowtie.annotation.Path;
 import com.kenzan.bowtie.annotation.Query;
 import com.kenzan.bowtie.annotation.ResponseType;
+import com.kenzan.bowtie.http.setter.SetterFromHystrexGroup;
+import com.kenzan.bowtie.http.setter.SetterFromReflection;
 import com.netflix.client.http.HttpRequest;
 import com.netflix.client.http.HttpRequest.Builder;
 import com.netflix.hystrix.HystrixCommand.Setter;
-import com.netflix.hystrix.HystrixCommandGroupKey;
-import com.netflix.hystrix.HystrixCommandKey;
 import com.netflix.ribbon.proxy.annotation.Http;
 
 public class MethodInfo {
@@ -40,7 +40,6 @@ public class MethodInfo {
     private final Http http;
     private final Optional<Cookies> cookiesAnnotation;
     private final Optional<ResponseType> responseType;
-    private final HystrixGroup hystrix;
     private final boolean isObservable;
     private final String cacheKeyGroup;
     private List<String> cookies = new ArrayList<>();
@@ -67,25 +66,18 @@ public class MethodInfo {
                 .filter(a -> ResponseType.class.equals(a.annotationType()))
                 .map(a -> (ResponseType) a).findFirst();
 
-        // GET HYSTRIX ANNOTATION
-        hystrix = Arrays
-                .stream(method.getAnnotations())
-                .filter(a -> HystrixGroup.class.equals(a.annotationType()))
-                .map(a -> (HystrixGroup) a)
-                .findFirst()
-                .orElseThrow(
-                        () -> new IllegalStateException(
-                                "No Hystrix annotation present."));
-
         cacheKeyGroup = Arrays.stream(method.getAnnotations())
                 .filter(a -> CacheKeyGroup.class.equals(a.annotationType()))
                 .map(a -> a == null ? null : ((CacheKeyGroup) a).value())
                 .findFirst().orElse(null);
 
-        this.setter = Setter.withGroupKey(
-                HystrixCommandGroupKey.Factory.asKey(hystrix.groupKey()))
-                .andCommandKey(
-                        HystrixCommandKey.Factory.asKey(hystrix.commandKey()));
+        this.setter = Arrays
+                .stream(method.getAnnotations())
+                .filter(a -> HystrixGroup.class.equals(a.annotationType()))
+                .map(a -> (HystrixGroup) a)
+                .findFirst()
+                .map(new SetterFromHystrexGroup())				                
+				.orElseGet(new SetterFromReflection(method));
 
         this.parameters = method.getParameters();
 
